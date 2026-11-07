@@ -1,0 +1,264 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>給承翰的小驚喜 ❤️</title>
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: #fff1f3;
+  font-family: "Noto Sans TC", sans-serif;
+  color: #684b50;
+}
+
+.card {
+  background: white;
+  width: 100%;
+  max-width: 420px;
+  padding: 35px 24px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 8px 30px #dcaab055;
+}
+
+h2 { color: #c87588; }
+
+.question {
+  font-size: 20px;
+  line-height: 1.7;
+  margin: 25px 0;
+}
+
+input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #e8c5cd;
+  border-radius: 12px;
+  font-size: 17px;
+  text-align: center;
+  outline-color: #d88fa0;
+}
+
+button {
+  border: none;
+  border-radius: 30px;
+  padding: 13px 30px;
+  margin: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #d98fa0;
+  color: white;
+}
+
+button.secondary {
+  background: #f2dce1;
+  color: #895965;
+}
+
+.buttons { margin-top: 20px; }
+
+.progress {
+  color: #c58a98;
+  font-size: 13px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: #0006;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 25px;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px 24px;
+  border-radius: 20px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  line-height: 1.9;
+  white-space: pre-line;
+}
+
+.modal button { margin-top: 20px; }
+
+img {
+  width: 100%;
+  border-radius: 15px;
+  margin-top: 15px;
+}
+
+.hidden { display: none !important; }
+</style>
+</head>
+
+<body>
+
+<div class="card" id="game">
+  <div style="font-size:35px">♡</div>
+  <h2>給你的一份小驚喜</h2>
+  <div class="progress" id="progress"></div>
+  <div class="question" id="question"></div>
+  <div id="answerArea"></div>
+  <div class="buttons" id="buttons"></div>
+</div>
+
+<div class="modal hidden" id="modal">
+  <div class="modal-content">
+    <div id="modalText"></div>
+    <button onclick="closeModal()">確定</button>
+  </div>
+</div>
+
+<div class="card hidden" id="ending">
+  <h2>❤️</h2>
+  <img src="success.jpg" alt="給承翰的生日驚喜">
+</div>
+
+<div class="card hidden" id="failure">
+  <img src="fail.jpg" alt="闖關失敗">
+</div>
+
+<script>
+const questions = [
+  {
+    text: "Q1. 請輸入你的寶貝的姓名",
+    type: "text",
+    answer: "戴郁恩"
+  },
+  {
+    text: "Q2. 請輸入我的出生年月日（西元年）",
+    type: "text",
+    answer: "20001108"
+  },
+  { text: "Q3. 你記得我們哪一天交往了沒？", type: "yesno" },
+  { text: "Q4. 你愛不愛我？", type: "yesno" },
+  { text: "Q5. 你知道我們明年要去考潛水證照嗎？", type: "yesno" },
+  { text: "Q6. 你知道我們還沒去桃園蹦蹦跳跳嗎？", type: "yesno" },
+  { text: "Q7. 我們還有很多很多事情還要一起完成，所以我會好好照顧自己！所以請你放心好嗎？", type: "yesno" },
+  { text: "Q8. 我很愛很愛你。", type: "yesno" },
+  { text: "Q9. 不管是快樂或是難過，我們都能互相分享。", type: "yesno" },
+  { text: "Q10. 最後一題！你有辦法閱讀文字嗎？", type: "yesno" }
+];
+
+let current = 0;
+
+function render() {
+  const q = questions[current];
+
+  document.getElementById("progress").textContent =
+    `QUESTION ${current + 1} / 10`;
+
+  document.getElementById("question").textContent = q.text;
+
+  const area = document.getElementById("answerArea");
+  const buttons = document.getElementById("buttons");
+
+  area.innerHTML = "";
+  buttons.innerHTML = "";
+
+  if (q.type === "text") {
+    const input = document.createElement("input");
+    input.id = "answer";
+    input.placeholder = "請輸入答案";
+    input.autocomplete = "off";
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") checkText();
+    });
+    area.appendChild(input);
+
+    const btn = document.createElement("button");
+    btn.textContent = "送出答案";
+    btn.onclick = checkText;
+    buttons.appendChild(btn);
+
+  } else {
+    ["是", "否"].forEach(value => {
+      const btn = document.createElement("button");
+      btn.textContent = value;
+      btn.className = value === "否" ? "secondary" : "";
+      btn.onclick = () => {
+        if (value === "否") {
+          showFailure();
+        } else {
+          nextQuestion();
+        }
+      };
+      buttons.appendChild(btn);
+    });
+  }
+}
+
+function checkText() {
+  const value = document.getElementById("answer").value.trim();
+
+  if (value === questions[current].answer) {
+    showModal("恭喜答對！", () => nextQuestion());
+  } else {
+    showModal("答案不太對喔，再試一次！");
+  }
+}
+
+function nextQuestion() {
+  current++;
+
+  if (current < questions.length) {
+    render();
+  } else {
+    showModal(
+      "my dear 承翰 babe,\n謝謝你玩回來第一件事情跑來幫我慶生呀，遇見你後我才知道用全力去愛一個人的自己是什麼模樣，你對我來說很珍貴，在很多事情上都有共鳴，我們的相似度高的嚇人。",
+      () => {
+        showModal(
+          "認識這一個月以來（哇才一個月），你已是我生命中不可或缺的一部分，不管是現在還是未來，你對我來說很重要 你的出現是我最棒的生日禮物，謝謝你我愛你",
+          () => showEnding()
+        );
+      }
+    );
+  }
+}
+
+let modalCallback = null;
+
+function showModal(message, callback = null) {
+  document.getElementById("modalText").textContent = message;
+  modalCallback = callback;
+  document.getElementById("modal").classList.remove("hidden");
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.add("hidden");
+
+  if (modalCallback) {
+    const callback = modalCallback;
+    modalCallback = null;
+    callback();
+  }
+}
+
+function showFailure() {
+  document.getElementById("game").classList.add("hidden");
+  document.getElementById("failure").classList.remove("hidden");
+}
+
+function showEnding() {
+  document.getElementById("game").classList.add("hidden");
+  document.getElementById("ending").classList.remove("hidden");
+}
+
+render();
+</script>
+
+</body>
+</html>
